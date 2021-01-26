@@ -5,7 +5,8 @@ from projects.Api.serializers import(
     ProjectsSerializers,
     ActionItemSerializer,
     TasksSerializers,
-    ShiftTasksSerializers
+    AssignUserSerializer,
+    AssignWatchSerializer
 )
 from django.utils import timezone
 from rest_framework.response import Response
@@ -46,9 +47,6 @@ class TasksViewSet(ModelViewSet):
         else:
             return Response(serializer.errors)
 
-    def update(self, request, *args, **kwargs):
-        return super().update(request, *args, **kwargs)
-
     @action(detail=True, methods=['PUT', 'GET'])
     def next(self, request, *args, **kwargs):
         """Concrete action for updating a single instance of task"""
@@ -82,3 +80,51 @@ class TasksViewSet(ModelViewSet):
             serializers = TasksSerializers(
                 choice, context={'request': request})
             return Response(serializers.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['PUT', 'GET'])
+    def assign_task(self, request, *args, **kwargs):
+        """Concrete action to assign users a task"""
+        selected_task = self.get_object()
+        if request.method == "PUT":
+            chosen_user = User.objects.get(pk=request.data['assigned'])
+            selected_task.assigned.add(chosen_user)
+            selected_task.save()
+            serializers = AssignUserSerializer(
+                instance=selected_task, context={'request': request})
+            return Response(serializers.data)
+        if request.method == "GET":
+            serializers = AssignUserSerializer(
+                instance=selected_task, context={'request': request})
+            return Response(serializers.data)
+
+    @action(detail=True, methods=['PUT', 'GET'])
+    def remove_assigned(self, request, *args, **kwargs):
+        """Concrete action to remove assigned users of a task"""
+        selected_task = self.get_object()
+        if request.method == "PUT":
+            chosen_user = User.objects.get(pk=request.data['assigned'])
+            selected_task.assigned.remove(chosen_user)
+            selected_task.save()
+            serializers = AssignUserSerializer(
+                instance=selected_task, context={'request': request})
+            return Response(serializers.data)
+        if request.method == "GET":
+            serializers = AssignUserSerializer(
+                instance=selected_task, context={'request': request})
+            return Response(serializers.data)
+
+    @action(detail=True, methods=['PUT', 'GET'])
+    def assign_watch(self, request, *args, **kwargs):
+        """Concrete action to remove assigned users of a task"""
+        selected_task = self.get_object()
+        if request.method == "PUT":
+            chosen_user = User.objects.get(pk=request.data['watch'])
+            selected_task.watch.add(chosen_user)
+            selected_task.save()
+            serializers = AssignWatchSerializer(
+                instance=selected_task, context={'request': request})
+            return Response(serializers.data)
+        if request.method == "GET":
+            serializers = AssignWatchSerializer(
+                instance=selected_task, context={'request': request})
+            return Response(serializers.data)

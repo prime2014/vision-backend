@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from todo.Api.serializers import UserSerializer
 from profiles.Api.serializers import ProfileSerializer
 from profiles.models import Profile
+from datetime import datetime
 
 
 class ProjectsSerializers(serializers.HyperlinkedModelSerializer):
@@ -16,24 +17,6 @@ class ProjectsSerializers(serializers.HyperlinkedModelSerializer):
         fields = ["url", "id", "title", "members"]
 
 
-class ShiftTasksSerializers(serializers.HyperlinkedModelSerializer):
-    url = serializers.HyperlinkedIdentityField(
-        view_name="projects:tasks-detail")
-    action = serializers.PrimaryKeyRelatedField(
-        queryset=ActionItems.objects.all(), many=False)
-    assigned = serializers.HyperlinkedRelatedField(
-        read_only=True, view_name="todo:users-detail", many=True, required=False)
-    watch = serializers.HyperlinkedRelatedField(
-        read_only=True, view_name="todo:users-detail", many=True, required=False)
-    description = serializers.ReadOnlyField()
-    title = serializers.ReadOnlyField()
-
-    class Meta:
-        model = Tasks
-        fields = ['assigned', 'url', 'pk', 'action',
-                  'title', 'description', 'due_date', 'watch']
-
-
 class TasksSerializers(serializers.HyperlinkedModelSerializer):
     url = serializers.HyperlinkedIdentityField(
         view_name="projects:tasks-detail")
@@ -43,7 +26,8 @@ class TasksSerializers(serializers.HyperlinkedModelSerializer):
                                                    view_name="todo:users-detail", many=True, required=False)
     watch = serializers.HyperlinkedRelatedField(queryset=User.objects.all(),
                                                 view_name="todo:users-detail", many=True, required=False)
-    due_date = serializers.DateTimeField(format="%a %b %d, %Y %H:%M:%S %p")
+    due_date = serializers.DateTimeField(
+        format="%a %b %d, %Y %H:%M %p", input_formats=["%d/%m/%Y %H:%M", ])
 
     class Meta:
         model = Tasks
@@ -58,6 +42,18 @@ class TasksSerializers(serializers.HyperlinkedModelSerializer):
     #         'description', instance.description)
     #     instance.save()
     #     return instance
+
+
+class AssignUserSerializer(TasksSerializers):
+    class Meta:
+        model = Tasks
+        fields = ['assigned']
+
+
+class AssignWatchSerializer(TasksSerializers):
+    class Meta:
+        model = Tasks
+        fields = ['watch']
 
 
 class ActionItemSerializer(serializers.HyperlinkedModelSerializer):
